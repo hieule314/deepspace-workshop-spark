@@ -1,27 +1,31 @@
 <!DOCTYPE html>
-<!--
-  Active theme is set on the <html> element below.
-  To switch themes, change `data-theme` to any id defined in src/themes.ts.
-  Color values per theme live in src/themes.css.
--->
-<html lang="en" data-theme="slate">
+<html lang="en" data-theme="workshop" data-appearance="system" data-color-scheme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="128x128" href="/workshop-spark-icon.png" />
     <title>Workshop Spark | Beginner computing activities</title>
-    <!--
-      First-paint background, keyed to the data-theme attribute above.
-      Without this the browser paints white until the CSS bundle arrives —
-      a hard flash on the dark themes. Each value mirrors --color-background
-      in src/styles.css (slate) / src/themes.css; keep them in sync when
-      adding or editing themes.
-    -->
     <style>
-      html { background-color: #0a0a0a; color-scheme: dark; }
-      html[data-theme="paper"] { background-color: #ffffff; color-scheme: light; }
-      /* Add one line per theme you create, mirroring its --color-background. */
+      /* Match the workshop theme before the stylesheet loads. */
+      html {
+        background-color: #f7f7f1;
+        color-scheme: light;
+      }
+      html[data-color-scheme="dark"] { background-color: #15211a; color-scheme: dark; }
     </style>
+    <script>
+      let appearance;
+      try {
+        appearance = JSON.parse(localStorage.getItem('workshop.preferences') || '{}')?.appearance;
+      } catch {
+        // If storage is unavailable, use the system preference.
+      }
+      if (appearance === 'light' || appearance === 'dark') {
+        document.documentElement.dataset.colorScheme = appearance;
+      } else if (matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.dataset.colorScheme = 'dark';
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

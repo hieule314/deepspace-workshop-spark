@@ -24,7 +24,7 @@ declare const __DEEPSPACE_SITE_ORIGIN__: string | undefined
 
 export const seo = {
   title: 'Workshop Spark | Beginner computing activities',
-  description: 'Run a short, interactive computing activity with a group. Try a guided binary search challenge and reveal the answer when the group is ready.',
+  description: 'Run a short, interactive computing activity with a group. Try a guided binary search or if/else challenge and reveal the answer when the group is ready.',
   /** Public origin for canonical URLs, og:url, and the sitemap — no trailing
    *  slash. Replace with the custom domain once one is attached, e.g.
    *  'https://www.example.com'. */

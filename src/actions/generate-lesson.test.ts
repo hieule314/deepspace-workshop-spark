@@ -25,9 +25,9 @@ function setup() {
       choices: [{ message: { content: JSON.stringify(draft) } }],
     } })
   const tools = { query, create, integration } as unknown as ActionTools
-  const run = (topic: string) => generateLesson({
+  const run = (topic: string, details: Record<string, string> = {}) => generateLesson({
     userId: 'facilitator-a',
-    params: { topic },
+    params: { topic, ...details },
     tools,
     env: {} as Parameters<typeof generateLesson>[0]['env'],
     callerJwt: '',
@@ -60,6 +60,55 @@ describe('generateLesson', () => {
     const result = await run('binary-search')
 
     expect(result).toMatchObject({ success: false, error: expect.stringContaining('daily generation limit') })
+    expect(integration).not.toHaveBeenCalled()
+  })
+
+  it('uses custom notes for generation and saves a usable diagram without a reference', async () => {
+    const { run, create, integration } = setup()
+    const diagram = {
+      title: 'Set out three cards',
+      layout: 'sequence',
+      items: [{ label: 'A', detail: 'Start here' }, { label: 'B' }, { label: 'C' }],
+    }
+    const customDraft = {
+      ...draft,
+      materials: ['Index cards'],
+      steps: [draft.steps[0], { ...draft.steps[1], diagram }, { ...draft.steps[2], diagram: { layout: 'html' } }],
+    }
+    integration.mockReset()
+      .mockResolvedValueOnce({ success: true, data: [] })
+      .mockResolvedValueOnce({ success: true, data: {
+        choices: [{ message: { content: JSON.stringify(customDraft) } }],
+      } })
+      .mockResolvedValueOnce({ success: true, data: { videos: [] } })
+
+    const result = await run('custom', { customTopic: '  Computer sound  ', notes: 'Use index cards.' })
+
+    expect(integration).toHaveBeenNthCalledWith(1, 'wikipedia/search-pages', { query: 'Computer sound', limit: 1 })
+    const completionBody = integration.mock.calls[1][1]
+    expect(JSON.parse(completionBody.messages[1].content)).toEqual({
+      topic: 'Computer sound',
+      notes: 'Use index cards.',
+    })
+    expect(integration).toHaveBeenLastCalledWith('youtube/search-videos', {
+      q: 'Computer sound beginner computer science explained', maxResults: 2,
+    })
+    expect(result).toMatchObject({
+      success: true,
+      data: { lesson: {
+        topic: 'Computer sound',
+        materials: ['Index cards'],
+        source: null,
+        steps: [draft.steps[0], { ...draft.steps[1], diagram }, draft.steps[2]],
+      } },
+    })
+    expect(create).toHaveBeenLastCalledWith('lessons', { lesson: expect.objectContaining({ materials: ['Index cards'] }) })
+  })
+
+  it('rejects blank custom topics before reserving an attempt', async () => {
+    const { run, create, integration } = setup()
+    expect(await run('custom', { customTopic: '   ' })).toMatchObject({ success: false })
+    expect(create).not.toHaveBeenCalled()
     expect(integration).not.toHaveBeenCalled()
   })
 })

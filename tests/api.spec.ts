@@ -6,13 +6,27 @@ test.describe('API tests', () => {
     expect(res.ok()).toBeTruthy()
   })
 
-  test('WebSocket endpoint exists', async ({ page }) => {
-    // /home is a dynamic page (under src/pages/(app)/), so mounting it boots
-    // the providers and auto-connects the records WebSocket. The static
-    // landing at '/' deliberately does neither — see smoke.spec.ts.
+  test('builder receives data from its scoped records WebSocket', async ({ page }) => {
+    const firstFrame = new Promise((resolve) => {
+      page.on('websocket', (socket) => {
+        if (new URL(socket.url()).pathname.startsWith('/ws/')) {
+          socket.once('framereceived', (frame) => resolve(frame.payload))
+        }
+      })
+    })
     await page.goto('/home')
-    // Wait for the app to connect its WebSocket (it auto-connects on mount)
-    await page.waitForSelector('[data-testid="app-navigation"]', { timeout: 15000 })
-    // If the app loaded and connected, the WS endpoint works
+    expect(await firstFrame).toBeTruthy()
+  })
+
+  test('signed-out callers cannot start generation or reach its paid providers', async ({ request }) => {
+    const generate = await request.post('/api/actions/generateLesson', { data: { topic: 'if-else' } })
+    expect(generate.status()).toBe(401)
+    const provider = await request.post('/api/integrations/openai/chat-completion', { data: {} })
+    expect(provider.status()).toBe(404)
+  })
+
+  test('generation rejects an oversized payload', async ({ request }) => {
+    const res = await request.post('/api/actions/generateLesson', { data: { topic: 'if-else', notes: 'x'.repeat(9_000) } })
+    expect(res.status()).toBe(413)
   })
 })

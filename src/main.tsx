@@ -4,7 +4,25 @@ import { createRoot, hydrateRoot } from 'react-dom/client'
 import { routes } from '@generouted/react-router/lazy'
 import { createBrowserRouter, RouterProvider } from 'react-router'
 import { installStaleChunkRecovery } from './stale-chunk-recovery'
+import { applyWorkshopPreferences, DARK_SCHEME_QUERY, PREFERENCES_KEY, readWorkshopPreferences } from './lib/workshop-preferences'
 import './styles.css'
+
+function syncPreferences() {
+  applyWorkshopPreferences(readWorkshopPreferences())
+}
+
+syncPreferences()
+const colorPreference = window.matchMedia(DARK_SCHEME_QUERY)
+if (colorPreference.addEventListener) {
+  colorPreference.addEventListener('change', syncPreferences)
+} else {
+  colorPreference.addListener(syncPreferences)
+}
+window.addEventListener('storage', (event) => {
+  if (event.key === PREFERENCES_KEY || event.key === null) {
+    syncPreferences()
+  }
+})
 
 async function main() {
   const root = document.getElementById('root')!

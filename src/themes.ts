@@ -18,6 +18,11 @@
 
 export const THEMES = [
   {
+    id: 'workshop',
+    label: 'Workshop',
+    description: 'Warm paper with a forest green accent.',
+  },
+  {
     id: 'slate',
     label: 'Slate',
     description: 'Neutral dark placeholder default. Replace with your own theme.',

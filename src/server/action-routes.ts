@@ -28,6 +28,7 @@
  */
 
 import type { Hono } from 'hono'
+import { bodyLimit } from 'hono/body-limit'
 import {
   apiWorkerFetch,
   lookupOwn,
@@ -42,7 +43,12 @@ import type { AppContext, Env } from '../../worker.js'
 type ResolveAuth = (req: Request, env: Env) => Promise<VerifyResult | null>
 
 export function registerActionRoutes(app: Hono<AppContext>, resolveAuth: ResolveAuth): void {
-  app.post('/api/actions/:name', async (c) => {
+  const limitActionBody = bodyLimit({
+    maxSize: 8 * 1024,
+    onError: (c) => c.json({ success: false, error: 'The request is too large.' }, 413),
+  })
+
+  app.post('/api/actions/:name', limitActionBody, async (c) => {
     const auth = await resolveAuth(c.req.raw, c.env)
     if (!auth) return c.json({ error: 'Unauthorized' }, 401)
     // `resolveAuth` may accept a cookie session, which carries no bearer token
@@ -62,7 +68,10 @@ export function registerActionRoutes(app: Hono<AppContext>, resolveAuth: Resolve
     // returns the handler argument, env secrets included, as the response.
     const action = lookupOwn(actions, name)
     if (!action) return c.json({ error: 'Action not found' }, 404)
-    const params = await c.req.json<Record<string, unknown>>()
+    const params = await c.req.json<Record<string, unknown>>().catch(() => null)
+    if (!params || typeof params !== 'object' || Array.isArray(params)) {
+      return c.json({ success: false, error: 'Submit a JSON object.' }, 400)
+    }
     const tools = createActionTools(c.env, auth.userId, callerJwt)
     const result = await action({ userId: auth.userId, params, tools, env: c.env, callerJwt })
     return c.json(result as unknown as Record<string, unknown>)
@@ -127,6 +136,7 @@ function createActionTools(env: Env, userId: string, callerJwt: string): ActionT
       method: 'POST',
       headers,
       body: JSON.stringify(data ?? {}),
+      signal: AbortSignal.timeout(25_000),
     })
     const payload = (await res.json()) as Record<string, unknown>
     if (!res.ok || payload.success === false) {

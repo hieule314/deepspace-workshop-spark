@@ -44,3 +44,27 @@
   --color-shell: #fafafa;
   --color-shell-panel: #ffffff;
 }
+
+[data-theme="workshop"] {
+  --color-background: var(--workshop-paper);
+  --color-foreground: var(--workshop-ink);
+  --color-card: var(--workshop-card);
+  --color-card-foreground: var(--workshop-ink);
+  --color-popover: var(--workshop-card);
+  --color-popover-foreground: var(--workshop-ink);
+  --color-primary: var(--workshop-accent);
+  --color-primary-foreground: var(--workshop-card);
+  --color-secondary: var(--workshop-tint);
+  --color-secondary-foreground: var(--workshop-ink);
+  --color-muted: var(--workshop-tint);
+  --color-muted-foreground: var(--workshop-muted);
+  --color-accent: var(--workshop-tint);
+  --color-accent-foreground: var(--workshop-ink);
+  --color-destructive: var(--workshop-danger);
+  --color-destructive-foreground: var(--workshop-card);
+  --color-border: var(--workshop-border);
+  --color-input: var(--workshop-border);
+  --color-ring: var(--workshop-accent);
+  --color-shell: var(--workshop-paper);
+  --color-shell-panel: var(--workshop-card);
+}

@@ -20,6 +20,7 @@ import { Outlet } from 'react-router-dom'
 import { DeepSpaceAuthProvider, useAuthStatus } from 'deepspace'
 import { RecordProvider, RecordScope, AgentTools } from 'deepspace'
 import Navigation from '../../components/Navigation'
+import { WorkshopMasthead } from '../../components/WorkshopMasthead'
 import { useToast } from '@/components/ui'
 import { APP_DISPLAY_NAME, SCOPE_ID } from '../../constants'
 import { schemas } from '../../schemas'
@@ -33,7 +34,7 @@ export default function AppLayout() {
       <AuthBoot>
         <div className="flex h-screen flex-col bg-background overflow-hidden">
           <Navigation />
-          <main className="flex-1 overflow-y-auto min-h-0">
+          <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto min-h-0">
             <Suspense fallback={<div className="flex items-center justify-center h-full text-muted-foreground">Loading...</div>}>
               <Outlet />
             </Suspense>
@@ -47,11 +48,7 @@ export default function AppLayout() {
 /**
  * Waits for auth to resolve, then mounts the data layer. Distinct from the SDK's `AuthGate`.
  *
- * While the initial session check is in flight, renders a fixed full-viewport
- * panel in the theme background — visually identical to the pre-JS page
- * (index.html primes <html> with the same color), so a cold load shows a
- * steady theme-colored screen until the shell appears. No spinner text: the
- * check is one round-trip, and in-flow placeholders read as a layout jump.
+ * Keep public navigation available while the session check is in flight.
  */
 function AuthBoot({ children }: { children: ReactNode }) {
   const { isLoaded } = useAuthStatus()
@@ -62,7 +59,14 @@ function AuthBoot({ children }: { children: ReactNode }) {
   const { error, warning } = useToast()
 
   if (!isLoaded) {
-    return <div aria-busy="true" className="fixed inset-0 bg-background" />
+    return (
+      <>
+        <WorkshopMasthead />
+        <main id="main-content" tabIndex={-1} className="workshop-surface">
+          <p role="status" className="workshop-caption">Checking your session…</p>
+        </main>
+      </>
+    )
   }
 
   return (
